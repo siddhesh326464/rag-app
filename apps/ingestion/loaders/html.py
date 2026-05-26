@@ -23,7 +23,7 @@ def html_parse(file_path:str):
             for script in soup(tags_to_remove):
                 script.decompose()
 
-            text = script.get_text(separator=' ',strip=True)
+            text = soup.get_text(separator=' ',strip=True)
             lines = (line for line in text.splitlines())
             chunks = (phrase for line in lines for phrase in line.split(" "))
             text_clean = '\n'.join(chunk for chunk in chunks if chunk)

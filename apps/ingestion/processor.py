@@ -24,7 +24,8 @@ storage_client = storage.Client(project = settings.PROJECT_ID)
 #initialize qadrent vectore DB client
 qdrant_client = QdrantClient(
     url=settings.QDRANT_ENDPOINT,
-    api_key=settings.QDRANT_API_KEY
+    api_key=settings.QDRANT_API_KEY,
+    timeout=60.0
 )
 
 
@@ -78,7 +79,23 @@ def process_file(file_path:str,filename:str,source_type:str,skip_raw_upload : bo
             with logfire.span("🧠 Vectorizing & Indexing"):
                 embeddings = embed_texts(chunks)
                 points = []
-
+                for i, (chunk, vector) in enumerate(zip(chunks, embeddings)):
+                    points.append(models.PointStruct(
+                        id=str(uuid.uuid4()),
+                        vector=vector,
+                        payload={
+                            "text": chunk,
+                            "source": filename,
+                            "source_type": source_type,
+                            "raw_gcs_path": f"gs://{settings.RAW_BUCKET}/{raw_gsc_path}"
+                        }
+                    ))
+                
+                qdrant_client.upsert(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    points=points,
+                )
+                logfire.info(f"✨ Indexed {len(points)} points to Qdrant")
 
 
         except Exception as e:  
@@ -150,3 +167,47 @@ def process_from_gcs(bucket_name: str, blob_name: str, filename: str, source_typ
             if os.path.exists(temp_file.name):
                 os.remove(temp_file.name)
 
+def run_universal_ingestion(base_dir:str,explicit_source_type:str = None,wipe : bool = False):
+    """
+    Automatically scans the directory for CLI usage.
+    """
+    with logfire.span("🌍 Universal Ingestion Started", base_directory=base_dir):
+        if not qdrant_client.collection_exists(settings.QDRANT_COLLECTION):
+            qdrant_client.create_collection(
+                collection_name=settings.QDRANT_COLLECTION,
+                vectors_config=models.VectorParams(size=settings.EMBEDDING_SIZE,distance=models.Distance.COSINE)
+            )
+        
+        subdirs = subdirs = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
+
+        if not subdirs:
+            source_type = explicit_source_type or "general"
+            process_directory(base_dir, source_type)
+        else:
+            for subdir in subdirs:
+                source_type = "true" if "true" in subdir.lower() else "noisy" if "noisy" in subdir.lower() else subdir
+                dir_path = os.path.join(base_dir, subdir)
+                process_directory(dir_path, source_type)
+
+
+def process_directory(dir_path: str, source_type: str):
+    files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+    for filename in files:
+        file_path = os.path.join(dir_path, filename)
+        # For CLI usage, we DO want to upload the local file to GCS
+        process_file(file_path, filename, source_type, skip_raw_upload=False)
+        
+
+
+if __name__ == "__main__":
+    # Standard CLI logic
+    wipe_requested = "--wipe" in sys.argv
+    clean_args = [a for a in sys.argv if a != "--wipe"]
+    target_dir = clean_args[1] if len(clean_args) > 1 else "DATA"
+    explicit_type = clean_args[2] if len(clean_args) > 2 else None
+    
+    if os.path.exists(target_dir):
+        run_universal_ingestion(target_dir, explicit_source_type=explicit_type, wipe=wipe_requested)
+        logfire.info("🏁 Universal Ingestion Job Completed")
+    else:
+        print(f"Error: Path {target_dir} does not exist.")

@@ -4,11 +4,13 @@ import os
 
 class Settings(BaseSettings):
     MAX_PAGES_PER_REQUEST:int = 15
-    CHUNK_SIZE : int = 1500
+    CHUNK_SIZE : int = 1000
     BATCH_SIZE : int = 50
 
     QDRANT_API_KEY : str
     QDRANT_ENDPOINT : str
+    QDRANT_COLLECTION : str = "enterprise_rag"
+    EMBEDDING_SIZE : int = 768
 
     PROJECT_ID: str = "enterpricerag-496507"
     LOCATION: str = "us-central1"
