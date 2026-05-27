@@ -35,10 +35,11 @@ def planner_node(state:AgentState)->AgentState:
     "{user_message}"
     
     Task:
-    1. If the latest message is a greeting (hi, hello) or a question that can be answered using ONLY the conversation history above (e.g., "what is my name"), respond with 'CONVERSATIONAL'.
-    2. If it is a technical question about Kubernetes, Intel, or Networking that requires fresh documentation, output a refined search query.
+    1. Respond ONLY with 'CONVERSATIONAL' if the message is a pure greeting (e.g., "hi", "hello"), casual small talk, or a direct question that can be answered entirely using the CONVERSATION HISTORY provided above.
     
-    Output ONLY 'CONVERSATIONAL' or the search query.
+    2. If the message is a technical, conceptual, or professional question—including real-world scenarios, platform engineering, infrastructure, Kubernetes, Intel, or Networking—generate a refined search query to fetch relevant industry knowledge, case studies, or architectural patterns.
+    
+    Output ONLY 'CONVERSATIONAL' or the search query. Avoid referencing "you" in the search query.
     """
 
     with logfire.span("🧠 Planner Decision"):

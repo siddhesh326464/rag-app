@@ -39,4 +39,4 @@ def handel_query_view(query_data:QueryRequest):
     Endpoint to handle user queries. It accepts a query and an optional conversation ID,
     """
     response = handel_query(query_data.query, query_data.conversation_id)
-    return {"response": response}
+    return response
