@@ -14,3 +14,5 @@ class AgentState(TypedDict):
     plan : List[str]
     status : str
     final_ans : str
+    retrieval_attempts : int
+    grader_approved : str

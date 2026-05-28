@@ -25,8 +25,7 @@ def planner_node(state:AgentState)->AgentState:
     user_message = state["messages"][-1]["content"] if state["messages"] else ""
 
     prompt = f"""
-    You are an intelligent Assistant Planner. 
-    Analyze the conversation history and the latest user message.
+    You are an intelligent query classifier and search query generator for an Enterprise RAG pipeline.
     
     CONVERSATION HISTORY:
     {history}
@@ -34,14 +33,32 @@ def planner_node(state:AgentState)->AgentState:
     LATEST MESSAGE:
     "{user_message}"
     
-    Task:
-    1. Respond ONLY with 'CONVERSATIONAL' if the message is a pure greeting (e.g., "hi", "hello"), casual small talk, or a direct question that can be answered entirely using the CONVERSATION HISTORY provided above.
-    
-    2. If the message is a technical, conceptual, or professional question—including real-world scenarios, platform engineering, infrastructure, Kubernetes, Intel, or Networking—generate a refined search query to fetch relevant industry knowledge, case studies, or architectural patterns.
-    
-    Output ONLY 'CONVERSATIONAL' or the search query. Avoid referencing "you" in the search query.
-    """
+    Classification Rules:
 
+    Respond ONLY with 'CONVERSATIONAL' if the message is:
+    - A greeting (hi, hello, hey, good morning)
+    - Pure small talk (how are you, what's your name)
+    - A follow-up referencing ONLY the conversation history 
+      (e.g., "can you explain that again", "summarize what you said")
+    - Completely non-technical with no domain-specific intent
+
+    For ALL other messages — including any question about:
+    - Kubernetes, Docker, containers, cloud, DevOps, infrastructure
+    - Networking, Intel, platform engineering, system design
+    - Any named technology, tool, framework, or architecture
+    - Any technical concept, even if it seems basic or general
+    → Generate a concise, precise search query to retrieve 
+      relevant technical documentation or knowledge.
+
+    IMPORTANT:
+    - NEVER classify a technical question as CONVERSATIONAL just because 
+      you already know the answer.
+    - Domain knowledge in your training does NOT qualify as CONVERSATIONAL.
+    - When in doubt, generate a search query.
+
+    Output ONLY 'CONVERSATIONAL' or the search query.
+    Do NOT include explanations or any other text.
+    """
     with logfire.span("🧠 Planner Decision"):
         decision = llm.invoke(prompt).content.strip()
         logfire.info(f"Intent identified: {decision}")
