@@ -3,12 +3,22 @@ from fastapi import FastAPI, Response
 from apps.agents.graph import rag_agent
 from apps.schema import QueryRequest
 from apps.service import handel_query
+from apps.guardrails.rails import initialize_rails
 
 
 
 logfire.configure(token=os.getenv("LOGFIRE_TOKEN"))
 
 app = FastAPI(title="Enterprise Agentic RAG API")
+
+
+@app.on_event("startup")
+def startup_event():
+    """
+    Event handler for application startup. Initializes the guardrails system.
+    """
+    logfire.info("Starting up the Enterprise Agentic RAG API...")
+    initialize_rails()
 
 
 @app.get("/")
