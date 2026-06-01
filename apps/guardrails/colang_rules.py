@@ -83,9 +83,10 @@ define flow farewell
 
 
 YAML_CONTENT = """ 
+colang_version: "1.0"
 models:
   - type: main
-    engine: openai
+    engine: openai  
     model: gpt-3.5-turbo
 
 instructions:
@@ -104,9 +105,11 @@ instructions:
 # These phrases are specific enough to never appear in a legitimate RAG answer.
 
 RAIL_INDICATORS = [
-    "I'm an Enterprise IT Assistant focused on Kubernetes",  # Updated to match actual bot message
-    "I'm sorry, but I cannot comply with that request",
-    "Hello! How can I assist you with your Enterprise IT needs today?",
-    "Goodbye! If you have any more questions about Enterprise IT",
-    "I am an Enterprise IT Assistant specializing in Kubernetes"
+    "Enterprise IT Assistant focused on Kubernetes",
+    "cannot comply with that request",
+    "cannot bypass them",
+    "violate my programming",
+    "How can I assist you with your Enterprise IT needs",
+    "If you have any more questions about Enterprise IT",
+    "Enterprise IT Assistant specializing in Kubernetes",
 ]

@@ -45,13 +45,15 @@ def guard(message:str)-> tuple:
 
         result = _rails.generate(messages = [{"role":"user","content":message}])
 
+        logfire.info(f"Guardrail raw result: {result}, type: {type(result)}")
+
         content = result.get("content", "") if isinstance(result, dict) else str(result)
 
         fired = any(indicator in content for indicator in RAIL_INDICATORS)
 
         if fired:
-            logfire.info("Guardrail triggered for message: %s")
+            logfire.info(f"Guardrail triggered for message: {message}")
             return True, content
-        logfire.info("No guardrails triggered for message: %s")
+        logfire.info(f"No guardrails triggered for message: {message}")
         return False, None
 

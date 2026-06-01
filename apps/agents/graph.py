@@ -33,15 +33,17 @@ def routing(state:AgentState)->str:
 def check_retrieval_needed(state:AgentState)->str:
     """
     This function acts as the routing logic (conditional edge) following the 
-    retriever node. It checks if the retrieved documents are sufficient to 
-    answer the query. If not, it routes back to the retriever for another attempt.
+    grader node. It checks if the grader approved the answer. If rejected and
+    retries remain, it routes back to the retriever for another attempt.
     """
-    if state["retrieval_attempts"] >= 3:
+    grader_approved = state.get("grader_approved", "")
+    retrieval_attempts = state.get("retrieval_attempts", 0)
+
+    if grader_approved == "APPROVED":
         return END
-    elif state["grader_approved"] == "REJECTED" and state["retrieval_attempts"] < 3:
-        return "retriever"
-    else:
+    if retrieval_attempts >= 3:
         return END
+    return "retriever"
 
 #----- create edges ----------------
 

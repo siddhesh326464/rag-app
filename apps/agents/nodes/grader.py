@@ -20,11 +20,23 @@ def grader_node(state: AgentState) -> AgentState:
     `grader_approved` ("APPROVED"/"REJECTED") and `retrieval_attempts`.
     Skips grading entirely for conversational queries.
     """
-    if state["current_query"] == "CONVERSATIONAL":
+    if state.get("current_query") == "CONVERSATIONAL":
         return {
             "grader_approved": "APPROVED",
             "retrieval_attempts": 0,
             "status": "Conversational answer — grading skipped."
+        }
+
+    final_ans = state.get("final_ans", "")
+    documents = state.get("documents", [])
+    current_query = state.get("current_query", "")
+
+    if not final_ans:
+        logfire.warning("Grader received empty final_ans — defaulting to REJECTED")
+        return {
+            "grader_approved": "REJECTED",
+            "retrieval_attempts": state.get("retrieval_attempts", 0) + 1,
+            "status": "No answer was generated to grade.",
         }
 
     prompt = f"""
@@ -33,15 +45,15 @@ def grader_node(state: AgentState) -> AgentState:
     the final answer is accurate, complete, and grounded in those documents.
 
     USER QUERY:
-    "{state['current_query']}"
+    "{current_query}"
 
     FETCHED DOCUMENTS / CONTEXT:
     \"\"\"
-    {state['documents']}
+    {documents}
     \"\"\"
 
     FINAL ANSWER:
-    "{state['final_ans']}"
+    "{final_ans}"
 
     Evaluation Criteria — ALL must pass for APPROVED:
 
@@ -78,15 +90,15 @@ def grader_node(state: AgentState) -> AgentState:
         logfire.info(f"Grader decision: {grader_decision}")
 
     if grader_decision == "APPROVED":
-        current_attempts = 0
+        current_attempts = state.get("retrieval_attempts", 0)
         status = "Answer approved by grader."
-        enhanced_query = state["current_query"]  # No change to query if approved
+        enhanced_query = current_query  # No change to query if approved
     else:
         current_attempts = state.get("retrieval_attempts", 0) + 1 
         status = f"Answer rejected. Documents were irrelevant or insufficient (Attempt {current_attempts})."
         enhance_prompt = f"""
-        ORIGINAL QUERY: "{state['current_query']}"
-        PREVIOUS FAILED ANSWER: "{state['final_ans']}"
+        ORIGINAL QUERY: "{current_query}"
+        PREVIOUS FAILED ANSWER: "{final_ans}"
         ATTEMPT NUMBER: {current_attempts}
         Reformulate the search query to approach from a different angle...
         """

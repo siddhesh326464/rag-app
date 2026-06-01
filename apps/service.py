@@ -17,6 +17,8 @@ def handel_query(query:str,conversation_id:str):
             "documents":[],
             "plan":["Start"],
             "status":"Initializing Graph......",
+            "retrieval_attempts": 0,
+            "grader_approved": "",
         }
 
         config = {"configurable": {"thread_id": conversation_id}}
