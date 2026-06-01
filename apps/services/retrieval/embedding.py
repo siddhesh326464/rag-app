@@ -1,8 +1,10 @@
 import logfire,vertexai
 from apps.config import settings
 from vertexai.language_models import TextEmbeddingModel
+from fastembed.sparse import SparseTextEmbedding
 
 model = None
+sparse_model = None
 
 def get_embedding_model():
     """
@@ -36,3 +38,31 @@ def embed_query(query: str):
     model = get_embedding_model()
     embeddings = model.get_embeddings([query])
     return embeddings[0].values
+
+
+def get_sparse_embedding_model():
+    """
+    Initializes and retrieves the global sparse embedding model instance.
+    This is a placeholder for future implementation of sparse embeddings.
+    """
+    global sparse_model
+    if sparse_model is None:
+        logfire.info("Initializing sparse embedding model...")
+        # Initialize your sparse embedding model here
+        sparse_model = SparseTextEmbedding(model_name="prithivida/Splade_PP_en_v1")
+    return sparse_model
+
+
+def embed_sparse_query(query:str):
+    """
+    Embeds a query string using the sparse embedding approach.
+    This is a placeholder for future implementation of sparse embeddings.
+    """
+    sparse_model = get_sparse_embedding_model()
+    sparse_embeddings = list(sparse_model.embed([query]))
+    query_sparse_vector = sparse_embeddings[0]
+
+    return {
+        "indices": query_sparse_vector.indices.tolist(),
+        "values": query_sparse_vector.values.tolist()
+    }

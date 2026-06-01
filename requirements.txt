@@ -54,3 +54,5 @@ loguru                       # Enhanced logging for Python
 langchain-nvidia-ai-endpoints
 nemoguardrails
 ipykernel
+
+fastembed
