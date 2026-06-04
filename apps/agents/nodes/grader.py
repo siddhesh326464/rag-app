@@ -31,6 +31,15 @@ def grader_node(state: AgentState) -> AgentState:
     documents = state.get("documents", [])
     current_query = state.get("current_query", "")
 
+    # Fix 1: Format documents into clean plain text for the grader LLM
+    if documents:
+        formatted_docs = "\n\n".join(
+            f"[Doc {i+1}]: {doc.page_content}" if hasattr(doc, "page_content") else f"[Doc {i+1}]: {str(doc)}"
+            for i, doc in enumerate(documents)
+        )
+    else:
+        formatted_docs = "No documents retrieved."
+
     if not final_ans:
         logfire.warning("Grader received empty final_ans — defaulting to REJECTED")
         return {
@@ -39,40 +48,54 @@ def grader_node(state: AgentState) -> AgentState:
             "status": "No answer was generated to grade.",
         }
 
+    # Fix 3: Guard against empty documents
+    if not documents:
+        logfire.warning("Grader received no documents — defaulting to REJECTED")
+        return {
+            "grader_approved": "REJECTED",
+            "retrieval_attempts": state.get("retrieval_attempts", 0) + 1,
+            "status": "No documents retrieved to grade against.",
+        }
+
+    # Fix 2: Query-aware, relaxed grader prompt
     prompt = f"""
-    You are a strict technical evaluator for a RAG (Retrieval-Augmented Generation) pipeline.
-    Your sole job is to judge whether the retrieved documents were relevant AND whether
-    the final answer is accurate, complete, and grounded in those documents.
+    You are a technical evaluator for a RAG (Retrieval-Augmented Generation) pipeline.
+    Your job is to judge whether the FINAL ANSWER correctly addresses the USER QUERY
+    based on the FETCHED DOCUMENTS.
 
     USER QUERY:
     "{current_query}"
 
     FETCHED DOCUMENTS / CONTEXT:
     \"\"\"
-    {documents}
+    {formatted_docs}
     \"\"\"
 
     FINAL ANSWER:
     "{final_ans}"
 
-    Evaluation Criteria — ALL must pass for APPROVED:
+    QUERY TYPE DETECTION:
+    - If the query starts with "what is", "define", "explain", "what are" → it is a DEFINITIONAL query.
+    - If the query describes a problem, error, failure, or asks "how to fix/configure/debug" → it is a TECHNICAL query.
 
-    1. RELEVANCE: Do the fetched documents directly address the technical domain
-       or specific problem stated in the USER QUERY?
-       → Fail if documents are off-topic, generic, or unrelated.
+    Evaluation Criteria:
 
-    2. COMPLETENESS: Does the FINAL ANSWER address the USER QUERY fully,
-       covering key technical details without leaving critical gaps?
-       → Fail if the answer is vague, partial, or deflects the question.
+    1. RELEVANCE: Do the fetched documents relate to the topic in the USER QUERY?
+       → Fail ONLY if documents are completely off-topic (e.g., query about pods but docs are about recipes).
+       → Pass if docs partially cover the topic.
 
-    3. GROUNDEDNESS: Is every claim in the FINAL ANSWER traceable to the
-       FETCHED DOCUMENTS? The answer must not introduce facts, APIs, methods,
-       or figures that are absent from the documents.
-       → Fail if the answer hallucinates or contradicts the documents.
+    2. COMPLETENESS:
+       → For DEFINITIONAL queries: PASS if the answer gives a correct basic definition. A short answer is acceptable.
+       → For TECHNICAL queries: PASS if the answer addresses the key steps or solution. Partial coverage is acceptable.
+       → Fail ONLY if the answer is completely empty, nonsensical, or says "I don't know".
+
+    3. GROUNDEDNESS: Is the answer reasonably based on the documents?
+       → Fail ONLY if the answer directly contradicts the documents or introduces completely fabricated facts.
+       → Minor LLM elaboration is acceptable as long as it does not contradict the docs.
 
     Decision Rules:
-    - Output APPROVED only if ALL three criteria pass.
-    - Output REJECTED if ANY one criterion fails.
+    - Output APPROVED if the answer is relevant, reasonable, and not contradicting the docs.
+    - Output REJECTED only if the answer is clearly wrong, off-topic, or contradicts the documents.
     - Output ONLY the single word: APPROVED or REJECTED.
     - Do NOT include explanations, punctuation, or any other text.
     """
