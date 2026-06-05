@@ -56,3 +56,10 @@ nemoguardrails
 ipykernel
 
 fastembed
+portkey-ai
+
+ragas
+deepeval
+langfuse
+
+sentence-transformers
