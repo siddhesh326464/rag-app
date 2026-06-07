@@ -42,7 +42,7 @@ def search_enterprise_knowledge(query:str,limit:int = settings.TOP_K):
         return []
 
 
-def search_enterprise_knowledge(query:str,limit:int = settings.TOP_K):
+def search_enterprise_knowledge1(query:str,limit:int = settings.TOP_K):
     """
     Performs a high-precision search in the enterprise knowledge base.
     Uses the modern query_points interface.

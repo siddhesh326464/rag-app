@@ -2,6 +2,7 @@ import logfire,os
 from apps.agents.graph import rag_agent
 from fastapi import HTTPException
 from apps.guardrails.rails import guard
+from apps.services.gcp.redis_scemantic_cache import search_in_cache, initialize_cache, add_to_cache
 
 
 def handel_query(query:str,conversation_id:str):
@@ -10,6 +11,17 @@ def handel_query(query:str,conversation_id:str):
     constructs the initial state for the agent, and runs the agent to get a response.
     """
     try:
+        # checking semantic cache first
+        cache_response = search_in_cache(query)
+        if cache_response:
+            logfire.info(f"cache hit for query: {query}")
+            return {
+                "question": query,
+                "answer": cache_response,
+                "thought_process": "Answer retrieved from semantic cache.",
+                "status": "Cache Hit",
+                "sources": []
+            }
         logfire.info(f"Handling query: {query} for conversation_id: {conversation_id}")
         initial_state = {
             "messages" : [{"role":"user","content":query}],
@@ -37,6 +49,10 @@ def handel_query(query:str,conversation_id:str):
             logfire.error(f"Error in guardrail check: {e}")
             raise HTTPException(status_code=500, detail="Error in guardrail check")
         final_output = rag_agent.invoke(initial_state, config=config)
+
+        # adding to cache if answer is present in final output
+        if final_output.get("answer"):
+            add_to_cache(query, final_output.get("answer", ""))
         return {
             "question": query,
             "answer": final_output.get("final_ans"),
