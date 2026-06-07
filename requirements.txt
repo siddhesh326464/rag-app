@@ -23,17 +23,21 @@ cloud-sql-python-connector   # Secure connection to Cloud SQL
 qdrant-client                # Vector Database for semantic search
 flashrank                    # Ultra-fast local cross-encoder for re-ranking
 redis                        # Memorystore for semantic caching
+redisvl                      # for vector search
 sqlalchemy                   # ORM for persistent conversation history
 pg8000                       # Postgres driver for Cloud SQL
+psycopg[binary]              # Postgres driver for Cloud SQL
+psycopg_pool                 # connection pooling for high concurrency memory
 
 # --- LANGCHAIN & AGENTIC ORCHESTRATION ---
 langchain                    # Core LLM orchestration
 langgraph                    # State-machine logic for cyclic agentic workflows
 langchain-google-vertexai    # Integration for Google LLMs/Embeddings
 langchain-groq               # Integration for lightning-fast Llama/Mistral inference
-langchain-community          # Community-contributed tools and loaders
+langchain-community  # Community-contributed tools and loaders (pinned: ragas 0.4.3 needs chat_models.vertexai removed in 0.3+)
 langchain-openai             # (Optional) OpenAI compatibility layer
 pydantic>=2.0.0              # Data validation and settings management
+langgraph-checkpoint-postgres    # checkpointing for high concurrency memory    
 
 # --- DATA INGESTION & OFFICE PARSING ---
 unstructured                 # Base library for document partitioning
@@ -61,5 +65,5 @@ portkey-ai
 ragas
 deepeval
 langfuse
-
 sentence-transformers
+torchvision

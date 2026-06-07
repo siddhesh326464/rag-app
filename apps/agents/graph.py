@@ -6,7 +6,9 @@ from apps.agents.nodes.responder import final_responder
 from apps.agents.nodes.retriver import retrive_node
 from apps.agents.nodes.grader import grader_node
 from apps.config import settings
-
+import logfire
+from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg_pool import ConnectionPool
 
 workflow = StateGraph(AgentState)
 
@@ -72,7 +74,34 @@ workflow.add_conditional_edges(
 
 
 # ----------- IMPLEMENT HYBRID MEMORY ---------------
-checkpointer = MemorySaver()
+# checkpointer = MemorySaver()
 
+# ------------ Hybrid Memory with Database Logging --------------
+
+def get_checkpointer():
+    """
+    Returns a persistent Postgres checkpointer in Cloud/Production mode,
+    and falls back to in-memory checkpointer in Local mode.
+    """
+    if settings.LOCAL_MODE:
+        logfire.info("Using in-memory checkpointer for local development.")
+        checkpointer = MemorySaver()
+        return checkpointer
+    try:
+        conninfo = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@/{settings.DB_NAME}?host=/cloudsql/{settings.DB_CONNECTION_NAME}"
+        pool = ConnectionPool(conninfo, max_size = 10, timeout = 30)
+
+        with pool.connection() as conn:
+            checkpointer = PostgresSaver(conn)
+            checkpointer.setup()
+        checkpointer = PostgresSaver(pool)
+        return checkpointer
+    except Exception as e:
+        logfire.error(f"Error setting up Postgres checkpointer: {e}")
+        logfire.info("Falling back to in-memory checkpointer.")
+        checkpointer = MemorySaver()
+        return checkpointer
+
+checkpointer = get_checkpointer()
 rag_agent = workflow.compile(checkpointer=checkpointer)
 

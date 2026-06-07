@@ -1,6 +1,8 @@
 from pydantic.v1 import BaseSettings
 from typing import Optional
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Settings(BaseSettings):
     #basic configurations
@@ -29,6 +31,16 @@ class Settings(BaseSettings):
     GROK_API_KEY : str
     GROQ_model : str = "llama-3.3-70b-versatile"
     TEMPRATURE : float
+
+    DB_USER = os.getenv("DB_USER", "rag_admin")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_NAME = os.getenv("DB_NAME", "rag_memory")
+    DB_CONNECTION_NAME = os.getenv("DB_CONNECTION_NAME")
+    
+    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+    LOCAL_MODE = os.getenv("LOCAL_MODE", "false").lower() == "true"
 
     class Config:
         env_file = ".env"
