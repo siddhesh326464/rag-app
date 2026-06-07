@@ -1,0 +1,35 @@
+steps:
+  # 1. Build backend image sequentially with caching
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest',
+      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest', 
+      '-f', 'docker/backend.Dockerfile', 
+      '.'
+    ]
+
+  # 2. Build frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest',
+      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest', 
+      '-f', 'docker/frontend.Dockerfile', 
+      '.'
+    ]
+
+  # 3. Build ingestion image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest',
+      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest', 
+      '-f', 'docker/ingetion.Dockerfile', 
+      '.'
+    ]
+
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest'
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest'
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest'
