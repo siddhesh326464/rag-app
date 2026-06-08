@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# Python environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Notebooks & evals (not needed at runtime)
+notebooks/
+evals/
+
+# Local state
+.logfire/
+.deepeval/
+
+# Secrets
+.env
+.env.*
+
+# Docs
+*.md
+README*
+
+# OS
+.DS_Store
+Thumbs.db

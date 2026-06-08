@@ -1,6 +1,44 @@
+# --- Version Control ---
 .git
 .gitignore
+
+# --- Python Environments ---
 venv/
 .venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- IDE & Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Notebooks (not needed in prod images) ---
+notebooks/
+
+# --- Evaluation & Testing (not needed in prod images) ---
+evals/
+
+# --- Local Secrets & Config ---
+.env
+.env.*
+
+# --- Observability local state ---
+.logfire/
+.deepeval/
+
+# --- Docs ---
+*.md
+README*
+
+# --- OS ---
+.DS_Store
+Thumbs.db

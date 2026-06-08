@@ -1,35 +1,92 @@
 steps:
-  # 1. Build backend image sequentially with caching
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest',
-      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest', 
-      '-f', 'docker/backend.Dockerfile', 
-      '.'
-    ]
+  # -------------------------------------------------------
+  # Pull existing images for cache (run in parallel)
+  # -------------------------------------------------------
+  - id: pull-backend
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest || true']
 
-  # 2. Build frontend image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest',
-      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest', 
-      '-f', 'docker/frontend.Dockerfile', 
-      '.'
-    ]
+  - id: pull-ui
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest || true']
 
-  # 3. Build ingestion image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '--cache-from', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest',
-      '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest', 
-      '-f', 'docker/ingetion.Dockerfile', 
-      '.'
-    ]
+  - id: pull-ingestion
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest || true']
+
+  # -------------------------------------------------------
+  # Build all three images (each waits for its pull only)
+  # -------------------------------------------------------
+  - id: build-backend
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['pull-backend']
+    args:
+      - 'build'
+      - '--cache-from'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest'
+      - '-f'
+      - 'docker/backend.Dockerfile'
+      - '.'
+
+  - id: build-ui
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['pull-ui']
+    args:
+      - 'build'
+      - '--cache-from'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest'
+      - '-f'
+      - 'docker/frontend.Dockerfile'
+      - '.'
+
+  - id: build-ingestion
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['pull-ingestion']
+    args:
+      - 'build'
+      - '--cache-from'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest'
+      - '-f'
+      - 'docker/ingestion.Dockerfile'
+      - '.'
+
+  # -------------------------------------------------------
+  # Push all three images in parallel
+  # -------------------------------------------------------
+  - id: push-backend
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['build-backend']
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest']
+
+  - id: push-ui
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['build-ui']
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest']
+
+  - id: push-ingestion
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['build-ingestion']
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest']
 
 images:
   - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/backend:latest'
   - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ui:latest'
   - 'us-central1-docker.pkg.dev/${PROJECT_ID}/enterprise-rag-repo/ingestion:latest'
+
+# Total build timeout: 3 hours (adjust down once cache is warm)
+timeout: '10800s'
+
+options:
+  # Use a faster/larger machine for heavy pip installs
+  machineType: 'E2_HIGHCPU_8'
+  # Store logs in Cloud Logging (better visibility)
+  logging: CLOUD_LOGGING_ONLY

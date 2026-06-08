@@ -35,9 +35,9 @@ class Settings(BaseSettings):
     DB_USER = os.getenv("DB_USER", "rag_admin")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME", "rag_memory")
-    DB_CONNECTION_NAME = os.getenv("DB_CONNECTION_NAME")
+    DB_CONNECTION_NAME = os.getenv("DB_CONNECTION_NAME","")
     
-    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_HOST = os.getenv("REDIS_HOST","")
     REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 
     LOCAL_MODE = os.getenv("LOCAL_MODE", "false").lower() == "true"
