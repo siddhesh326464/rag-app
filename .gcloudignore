@@ -2,6 +2,12 @@
 .git
 .gitignore
 
+# --- Terraform (provider binaries are huge, not needed to build images) ---
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+
 # --- Python Environments ---
 venv/
 .venv/

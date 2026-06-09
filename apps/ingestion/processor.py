@@ -130,7 +130,7 @@ async def eventarc_webhook(request: Request, background_tasks: BackgroundTasks):
         bucket = data.get("bucket")
         name = data.get("name")
 
-        if not bucket or name:
+        if not bucket or not name:
             logfire.error("❌ Invalid Eventarc payload")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid Eventarc payload")
 

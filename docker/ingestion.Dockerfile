@@ -35,4 +35,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
 
 # Start the Ingestion FastAPI application
-CMD ["python", "-m", "uvicorn", "app.ingestion.processor:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "apps.ingestion.processor:app", "--host", "0.0.0.0", "--port", "8080"]

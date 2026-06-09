@@ -220,3 +220,20 @@ __marimo__/
 .logfire
 
 DATA/
+
+# --- TERRAFORM (CRITICAL: state files contain plaintext secrets) ---
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+
+# --- Local observability state ---
+.deepeval/
+
+# --- Notebooks (outputs may contain sensitive data) ---
+notebooks/.ipynb_checkpoints/
+
+# --- VS Code (personal settings) ---
+.vscode/
